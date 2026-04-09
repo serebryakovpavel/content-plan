@@ -177,6 +177,15 @@ const GK  = id=>'prc_goal_'+id;
 const STSK= id=>'prc_cwstat_'+id;
 const CKK = 'prc_cw_checks';
 const CLIENTS_KEY='prc_clients';
+
+// ── SUPABASE ──
+const SB_URL='https://jwjgpkqdtyxhpxiucrug.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3amdwa3FkdHl4aHB4aXVjcnVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MTI0NjcsImV4cCI6MjA5MTI4ODQ2N30.PtaEXvaX8D7UyQqiJYGFSKCEefH8JR9TWe5Fm_rQwV0';
+const SB_HDR={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+
+async function sbGet(key){const ls=localStorage.getItem(key);fetch(`${SB_URL}/rest/v1/content_data?id=eq.${encodeURIComponent(key)}&select=data`,{headers:SB_HDR}).then(r=>r.json()).then(rows=>{if(rows&&rows.length)localStorage.setItem(key,JSON.stringify(rows[0].data));}).catch(()=>{});return ls?JSON.parse(ls):null;}
+async function sbSet(key,value){localStorage.setItem(key,JSON.stringify(value));fetch(`${SB_URL}/rest/v1/content_data`,{method:'POST',headers:{...SB_HDR,'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({id:key,data:value,updated_at:new Date().toISOString()})}).catch(()=>{});}
+async function sbPull(key){try{const r=await fetch(`${SB_URL}/rest/v1/content_data?id=eq.${encodeURIComponent(key)}&select=data`,{headers:SB_HDR});const rows=await r.json();if(rows&&rows.length){localStorage.setItem(key,JSON.stringify(rows[0].data));return rows[0].data;}}catch(e){}const ls=localStorage.getItem(key);return ls?JSON.parse(ls):null;}
 const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 
 let cY=new Date().getFullYear(),cM=new Date().getMonth();
@@ -203,13 +212,13 @@ function loadData(){
   if(!all[k]){const d=dim(cY,cM);return Array.from({length:d},(_,i)=>({day:i+1,posts:[{role:'',topic:'',format:'',note:''},{role:'',topic:'',format:'',note:''}]}));}
   return all[k];
 }
-function saveData(){const all=JSON.parse(localStorage.getItem(SK(curClientId))||'{}');all[mk()]=plan;localStorage.setItem(SK(curClientId),JSON.stringify(all));}
-function loadTasks(){return JSON.parse(localStorage.getItem(TK(curClientId))||'[]');}
+function saveData(){const stored=localStorage.getItem(SK(curClientId));const all=stored?JSON.parse(stored):{};all[mk()]=plan;sbSet(SK(curClientId),all);}
+function loadTasks(){const v=localStorage.getItem(TK(curClientId));return v?JSON.parse(v):[];}
 function loadGoal(){return parseInt(localStorage.getItem(GK(curClientId))||'30');}
 function loadChecks(){return JSON.parse(localStorage.getItem(CKK)||'{}');}
 function saveChecks(){localStorage.setItem(CKK,JSON.stringify(checks));}
-function loadStat(){return JSON.parse(localStorage.getItem(STSK(curClientId))||'{}');}
-function saveStat(s){localStorage.setItem(STSK(curClientId),JSON.stringify(s));}
+function loadStat(){const v=localStorage.getItem(STSK(curClientId));return v?JSON.parse(v):{};}
+function saveStat(s){sbSet(STSK(curClientId),s);}
 
 function setClient(id){
   curClientId=id;loadRoles();plan=loadData();
@@ -327,16 +336,46 @@ function renderTasks(){
 }
 function toggleChk(k){checks[k]=!checks[k];saveChecks();renderTasks();}
 
-// Auto-refresh
-setInterval(()=>{
-  loadClients();loadRoles();
-  const prev=JSON.stringify(plan);plan=loadData();
-  if(JSON.stringify(plan)!==prev){renderCal();}
-  updateGoalBar();renderTasks();renderClientBar();
-},8000);
+// ── INIT ──
+async function initApp(){
+  checks=loadChecks();
+  const [clientsData]=await Promise.all([sbPull(CLIENTS_KEY)]);
+  if(clientsData){clients=clientsData;localStorage.setItem(CLIENTS_KEY,JSON.stringify(clientsData));}
+  else loadClients();
+  curClientId=clients[0].id;
 
-checks=loadChecks();loadClients();curClientId=clients[0].id;
-loadRoles();plan=loadData();renderClientBar();renderCal();updateGoalBar();renderTasks();
+  const [rolesData,planData2,tasksData,goalData,statData]=await Promise.all([
+    sbPull(RK(curClientId)),sbPull(SK(curClientId)),
+    sbPull(TK(curClientId)),sbPull(GK(curClientId)),sbPull(STSK(curClientId))
+  ]);
+  if(rolesData)localStorage.setItem(RK(curClientId),JSON.stringify(rolesData));
+  if(tasksData)localStorage.setItem(TK(curClientId),JSON.stringify(tasksData));
+  if(goalData) localStorage.setItem(GK(curClientId),goalData);
+  if(statData) localStorage.setItem(STSK(curClientId),JSON.stringify(statData));
+
+  loadRoles();
+  const all=planData2||{};
+  const k=mk();
+  if(!all[k]){const d=dim(cY,cM);all[k]=Array.from({length:d},(_,i)=>({day:i+1,posts:[{role:'',topic:'',format:'',note:''},{role:'',topic:'',format:'',note:''}]}));}
+  localStorage.setItem(SK(curClientId),JSON.stringify(all));
+  plan=all[k];
+
+  renderClientBar();renderCal();updateGoalBar();renderTasks();
+
+  // refresh every 12s
+  setInterval(async()=>{
+    const [fresh,tFresh,gFresh,sFresh]=await Promise.all([
+      sbPull(SK(curClientId)),sbPull(TK(curClientId)),
+      sbPull(GK(curClientId)),sbPull(STSK(curClientId))
+    ]);
+    if(tFresh)localStorage.setItem(TK(curClientId),JSON.stringify(tFresh));
+    if(gFresh)localStorage.setItem(GK(curClientId),gFresh);
+    if(sFresh)localStorage.setItem(STSK(curClientId),JSON.stringify(sFresh));
+    if(fresh){const a=fresh;const k2=mk();if(a[k2]){plan=a[k2];localStorage.setItem(SK(curClientId),JSON.stringify(a));}}
+    renderCal();updateGoalBar();renderTasks();
+  },12000);
+}
+initApp();
 </script>
 </body>
 </html>

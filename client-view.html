@@ -134,10 +134,12 @@ function dim(y,m){return new Date(y,m+1,0).getDate();}
 function fdow(y,m){return(new Date(y,m,1).getDay()+6)%7;}
 function byId(id){return roles.find(r=>r.id===id);}
 
-function loadClients(){
-  clients=JSON.parse(localStorage.getItem(CLIENTS_KEY)||'null');
-  if(!clients||!clients.length)clients=[{id:'thailand',name:'Таиланд · Недвижимость',color:'#c9a96e'},{id:'crypto',name:'Крипта',color:'#a897f0'}];
-}
+// ── SUPABASE ──
+const SB_URL='https://jwjgpkqdtyxhpxiucrug.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3amdwa3FkdHl4aHB4aXVjcnVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MTI0NjcsImV4cCI6MjA5MTI4ODQ2N30.PtaEXvaX8D7UyQqiJYGFSKCEefH8JR9TWe5Fm_rQwV0';
+const SB_HDR={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+async function sbPull(key){try{const r=await fetch(`${SB_URL}/rest/v1/content_data?id=eq.${encodeURIComponent(key)}&select=data`,{headers:SB_HDR});const rows=await r.json();if(rows&&rows.length){localStorage.setItem(key,JSON.stringify(rows[0].data));return rows[0].data;}}catch(e){}const ls=localStorage.getItem(key);return ls?JSON.parse(ls):null;}
+
 function loadRoles(){
   const s=localStorage.getItem(RK(curClientId));
   roles=s?JSON.parse(s):[{id:'expert',name:'Эксперт по недвижке',bg:'#ddeeff',tc:'#1a4a7a'},{id:'family',name:'Семьянин',bg:'#d6f0e6',tc:'#0d5530'},{id:'expat',name:'Тайский экспат',bg:'#fdf0d4',tc:'#5a3800'},{id:'biz',name:'Бизнесмен',bg:'#eae8fc',tc:'#2a1f6a'},{id:'comment',name:'Комментатор',bg:'#fde8e0',tc:'#6a2010'},{id:'analyst',name:'Аналитик',bg:'#e4f4d8',tc:'#1a4a08'}];
@@ -149,7 +151,6 @@ function loadData(){
   return all[k];
 }
 
-function setClient(id){curClientId=id;loadRoles();plan=loadData();renderAll();}
 function prevMonth(){cM--;if(cM<0){cM=11;cY--;}plan=loadData();renderAll();}
 function nextMonth(){cM++;if(cM>11){cM=0;cY++;}plan=loadData();renderAll();}
 
@@ -250,9 +251,25 @@ function renderPie(){
     (empty>0?`<div class="leg-row"><div class="ldot" style="background:#c0bdb8"></div><div class="lname" style="color:#aaa">Без темы</div><div class="lbw"><div class="lbf" style="width:${Math.round(empty/total*100)}%;background:#c0bdb8"></div></div><div class="lpct" style="color:#aaa">${Math.round(empty/total*100)}%</div><div class="lcnt" style="color:#aaa">${empty} п.</div></div>`:'');
 }
 
-setInterval(()=>{loadClients();loadRoles();const prev=JSON.stringify(plan);plan=loadData();if(JSON.stringify(plan)!==prev)renderAll();},8000);
+async function initApp(){
+  curClientId='thailand';
+  const [rolesData,planData]=await Promise.all([sbPull(RK(curClientId)),sbPull(SK(curClientId))]);
+  if(rolesData)localStorage.setItem(RK(curClientId),JSON.stringify(rolesData));
+  loadRoles();
+  const all=planData||{};
+  const k=mk();
+  if(!all[k]){const d=dim(cY,cM);all[k]=Array.from({length:d},(_,i)=>({day:i+1,posts:[{role:'',topic:'',format:'',note:''},{role:'',topic:'',format:'',note:''}]}));}
+  localStorage.setItem(SK(curClientId),JSON.stringify(all));
+  plan=all[k];
+  renderAll();
 
-loadClients();curClientId='thailand';loadRoles();plan=loadData();renderAll();
+  // auto-refresh every 15s
+  setInterval(async()=>{
+    const fresh=await sbPull(SK(curClientId));
+    if(fresh){const a=fresh;const k2=mk();if(a[k2]){plan=a[k2];localStorage.setItem(SK(curClientId),JSON.stringify(a));renderAll();}}
+  },15000);
+}
+initApp();
 </script>
 </body>
 </html>

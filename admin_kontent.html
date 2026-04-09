@@ -331,6 +331,45 @@ nav{display:flex;align-items:center;gap:0;padding:0;height:54px;border-bottom:1p
 </div>
 
 <script>
+// ── SUPABASE SYNC ──
+const SB_URL = 'https://jwjgpkqdtyxhpxiucrug.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3amdwa3FkdHl4aHB4aXVjcnVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MTI0NjcsImV4cCI6MjA5MTI4ODQ2N30.PtaEXvaX8D7UyQqiJYGFSKCEefH8JR9TWe5Fm_rQwV0';
+const SB_HDR = { 'apikey': SB_KEY, 'Authorization': 'Bearer '+SB_KEY, 'Content-Type': 'application/json' };
+
+async function sbGet(key) {
+  const ls = localStorage.getItem(key);
+  // fetch fresh in background always
+  fetch(`${SB_URL}/rest/v1/content_data?id=eq.${encodeURIComponent(key)}&select=data`, { headers: SB_HDR })
+    .then(r=>r.json()).then(rows=>{
+      if(rows && rows.length) {
+        localStorage.setItem(key, JSON.stringify(rows[0].data));
+      }
+    }).catch(()=>{});
+  return ls ? JSON.parse(ls) : null;
+}
+
+async function sbSet(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+  fetch(`${SB_URL}/rest/v1/content_data`, {
+    method: 'POST',
+    headers: { ...SB_HDR, 'Prefer': 'resolution=merge-duplicates' },
+    body: JSON.stringify({ id: key, data: value, updated_at: new Date().toISOString() })
+  }).catch(()=>{});
+}
+
+async function sbPull(key) {
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/content_data?id=eq.${encodeURIComponent(key)}&select=data`, { headers: SB_HDR });
+    const rows = await r.json();
+    if (rows && rows.length) {
+      localStorage.setItem(key, JSON.stringify(rows[0].data));
+      return rows[0].data;
+    }
+  } catch(e) {}
+  const ls = localStorage.getItem(key);
+  return ls ? JSON.parse(ls) : null;
+}
+
 // ── STORAGE KEYS ──
 const SK  = id => 'prc_content_'  + id;
 const RK  = id => 'prc_roles_'    + id;
@@ -352,13 +391,16 @@ let ncColor=CLIENT_COLORS[0];
 
 // ── CLIENTS ──
 function loadClients(){
-  clients=JSON.parse(localStorage.getItem(CLIENTS_KEY)||'null');
+  const stored = localStorage.getItem(CLIENTS_KEY);
+  clients = stored ? JSON.parse(stored) : null;
   if(!clients||!clients.length){
     clients=[{id:'thailand',name:'Таиланд · Недвижимость',color:'#c9a96e'},{id:'crypto',name:'Крипта',color:'#a897f0'}];
-    localStorage.setItem(CLIENTS_KEY,JSON.stringify(clients));
+    sbSet(CLIENTS_KEY, clients);
   }
+  // pull fresh from server in background
+  sbPull(CLIENTS_KEY).then(v=>{ if(v){clients=v;localStorage.setItem(CLIENTS_KEY,JSON.stringify(v));renderClientTabs();} });
 }
-function saveClients(){localStorage.setItem(CLIENTS_KEY,JSON.stringify(clients));}
+function saveClients(){ sbSet(CLIENTS_KEY, clients); }
 function setClient(id){curClientId=id;loadRoles();plan=loadData();filters=new Set(roles.map(r=>r.id));renderAll();}
 
 function renderClientTabs(){
@@ -409,7 +451,7 @@ function loadRoles(){
     {id:'analyst',name:'Аналитик',bg:'#1a3318',tc:'#80c860'},
   ];
 }
-function saveRoles(){localStorage.setItem(RK(curClientId),JSON.stringify(roles));}
+function saveRoles(){ sbSet(RK(curClientId), roles); }
 function byId(id){return roles.find(r=>r.id===id);}
 
 // ── PLAN DATA ──
@@ -417,21 +459,27 @@ function mk(){return cY+'_'+cM;}
 function dim(y,m){return new Date(y,m+1,0).getDate();}
 function fdow(y,m){return(new Date(y,m,1).getDay()+6)%7;}
 function loadData(){
-  const all=JSON.parse(localStorage.getItem(SK(curClientId))||'{}');
+  const stored=localStorage.getItem(SK(curClientId));
+  const all=stored?JSON.parse(stored):{};
   const k=mk();
-  if(!all[k]){const d=dim(cY,cM);all[k]=Array.from({length:d},(_,i)=>({day:i+1,posts:[{role:'',topic:'',format:'',note:''},{role:'',topic:'',format:'',note:''}]}));localStorage.setItem(SK(curClientId),JSON.stringify(all));}
+  if(!all[k]){const d=dim(cY,cM);all[k]=Array.from({length:d},(_,i)=>({day:i+1,posts:[{role:'',topic:'',format:'',note:''},{role:'',topic:'',format:'',note:''}]}));sbSet(SK(curClientId),all);}
   return all[k];
 }
-function saveData(){const all=JSON.parse(localStorage.getItem(SK(curClientId))||'{}');all[mk()]=plan;localStorage.setItem(SK(curClientId),JSON.stringify(all));}
+function saveData(){
+  const stored=localStorage.getItem(SK(curClientId));
+  const all=stored?JSON.parse(stored):{};
+  all[mk()]=plan;
+  sbSet(SK(curClientId),all);
+}
 
 // ── TASKS / GOAL / BACKUP ──
-function loadTasks(){return JSON.parse(localStorage.getItem(TK(curClientId))||'[]');}
-function saveTasks(t){localStorage.setItem(TK(curClientId),JSON.stringify(t));}
+function loadTasks(){const v=localStorage.getItem(TK(curClientId));return v?JSON.parse(v):[];}
+function saveTasks(t){sbSet(TK(curClientId),t);}
 function loadGoal(){return parseInt(localStorage.getItem(GK(curClientId))||'30');}
-function saveGoal(){const v=parseInt(document.getElementById('goal-input').value)||30;localStorage.setItem(GK(curClientId),v);renderCwStats();}
-function loadBackup(){return JSON.parse(localStorage.getItem(BK(curClientId))||'[]');}
-function saveBackup(b){localStorage.setItem(BK(curClientId),JSON.stringify(b));}
-function loadCwStat(){return JSON.parse(localStorage.getItem(STSK(curClientId))||'{}');}
+function saveGoal(){const v=parseInt(document.getElementById('goal-input').value)||30;sbSet(GK(curClientId),v);localStorage.setItem(GK(curClientId),v);renderCwStats();}
+function loadBackup(){const v=localStorage.getItem(BK(curClientId));return v?JSON.parse(v):[];}
+function saveBackup(b){sbSet(BK(curClientId),b);}
+function loadCwStat(){const v=localStorage.getItem(STSK(curClientId));return v?JSON.parse(v):{};}
 
 // ── NAV ──
 function prevMonth(){cM--;if(cM<0){cM=11;cY--;}plan=loadData();renderAll();}
@@ -644,11 +692,44 @@ function addBackupPost(ci){
 function delBackupPost(ci,pi){const b=loadBackup();b[ci].posts.splice(pi,1);saveBackup(b);renderBackup();}
 
 // ── INIT ──
-loadClients();
-curClientId=clients[0].id;
-loadRoles(); plan=loadData(); filters=new Set(roles.map(r=>r.id));
-renderAll();
-setInterval(()=>{renderCwStats();},10000);
+async function initApp(){
+  // pull all keys from Supabase on start
+  const keys=[CLIENTS_KEY];
+  const allData = await Promise.all(keys.map(k=>sbPull(k)));
+  if(allData[0]) clients=allData[0];
+  else loadClients();
+
+  curClientId=clients[0].id;
+
+  // pull roles + plan for current client
+  const [rolesData, planAllData, tasksData, goalData, backupData] = await Promise.all([
+    sbPull(RK(curClientId)), sbPull(SK(curClientId)),
+    sbPull(TK(curClientId)), sbPull(GK(curClientId)), sbPull(BK(curClientId))
+  ]);
+  if(rolesData) roles=rolesData; else loadRoles();
+  if(tasksData) localStorage.setItem(TK(curClientId), JSON.stringify(tasksData));
+  if(goalData)  localStorage.setItem(GK(curClientId), goalData);
+  if(backupData)localStorage.setItem(BK(curClientId), JSON.stringify(backupData));
+
+  const all = planAllData || {};
+  const k=mk();
+  if(!all[k]){const d=dim(cY,cM);all[k]=Array.from({length:d},(_,i)=>({day:i+1,posts:[{role:'',topic:'',format:'',note:''},{role:'',topic:'',format:'',note:''}]}));}
+  localStorage.setItem(SK(curClientId), JSON.stringify(all));
+  plan = all[k];
+
+  filters=new Set(roles.map(r=>r.id));
+  renderAll();
+
+  // auto-refresh every 15s — pull plan + cwstat
+  setInterval(async ()=>{
+    const [fresh, cwfresh] = await Promise.all([sbPull(SK(curClientId)), sbPull(STSK(curClientId))]);
+    if(fresh){const a=fresh;const k2=mk();if(a[k2]){plan=a[k2];localStorage.setItem(SK(curClientId),JSON.stringify(a));}}
+    if(cwfresh) localStorage.setItem(STSK(curClientId), JSON.stringify(cwfresh));
+    renderCal();renderSidebar();renderCwStats();renderPie();
+  }, 15000);
+}
+
+initApp();
 </script>
 </body>
 </html>
