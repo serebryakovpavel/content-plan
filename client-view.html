@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Контент-план · Клиент</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#faf8f5;--bg2:#fff;--bg3:#f0ede8;--border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.12);--text:#1a1916;--text2:#7a7870;--text3:#b0ae a8;--gold:#b8944a;--gold2:#d4aa62;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+header{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold);letter-spacing:.02em;}
+.logo span{color:var(--text2);font-size:14px;font-family:'DM Sans',sans-serif;font-weight:300;margin-left:8px;}
+.client-sel{display:flex;gap:6px;}
+.ctab{padding:6px 14px;border-radius:20px;border:1px solid var(--border2);font-size:12px;color:var(--text2);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px;}
+.ctab:hover{border-color:var(--gold);color:var(--gold);}
+.ctab.active{background:var(--gold);color:#fff;border-color:var(--gold);}
+.ctdot{width:7px;height:7px;border-radius:50%;}
+.hright{display:flex;align-items:center;gap:12px;}
+.month-nav{display:flex;align-items:center;gap:8px;font-size:13px;}
+.month-nav button{background:none;border:1px solid var(--border2);color:var(--text2);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;}
+.month-nav button:hover{border-color:var(--gold);color:var(--gold);}
+.month-nav span{font-weight:500;color:var(--text);min-width:110px;text-align:center;}
+.badge{font-size:11px;background:var(--bg3);color:var(--text2);padding:4px 11px;border-radius:20px;}
+
+/* MAIN */
+.page{max-width:1100px;margin:0 auto;padding:28px 24px;}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--text);margin-bottom:4px;}
+.page-sub{font-size:13px;color:var(--text2);margin-bottom:24px;}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;}
+.stat-val{font-size:26px;font-weight:300;color:var(--text);}
+.stat-lbl{font-size:11px;color:var(--text2);margin-top:3px;}
+.stat-bar{height:3px;background:var(--bg3);border-radius:2px;margin-top:8px;overflow:hidden;}
+.stat-bar-f{height:100%;background:var(--gold);border-radius:2px;transition:width .5s;}
+
+/* CALENDAR */
+.cal-head{display:grid;grid-template-columns:28px repeat(7,1fr);gap:3px;margin-bottom:3px;}
+.cal-head span{font-size:10px;color:var(--text2);text-align:center;font-weight:500;letter-spacing:.04em;text-transform:uppercase;}
+.cal-grid{display:flex;flex-direction:column;gap:3px;}
+.cal-row{display:grid;grid-template-columns:28px repeat(7,1fr);gap:3px;}
+.wnl{font-size:9px;color:var(--text3);display:flex;align-items:flex-start;padding-top:6px;}
+.day-cell{border-radius:8px;overflow:hidden;border:1px solid var(--border2);background:var(--bg2);min-height:88px;display:flex;flex-direction:column;}
+.day-cell.empty-day{background:transparent;border:none;min-height:0;}
+.dn-row{padding:4px 6px;border-bottom:1px solid var(--border);}
+.dn{font-size:9px;color:var(--text2);font-weight:500;}
+.day-slots{display:flex;flex-direction:column;flex:1;}
+.post-slot{flex:1;padding:4px 6px;display:flex;flex-direction:column;gap:2px;min-height:36px;position:relative;}
+.post-slot:first-child{border-bottom:1px solid var(--border);}
+.snum{position:absolute;top:3px;right:4px;font-size:8px;color:rgba(0,0,0,0.2);font-weight:500;}
+.srole{font-size:9px;font-weight:600;}
+.stopic{font-size:8px;line-height:1.3;flex:1;color:var(--text);}
+.sfmt{font-size:7px;color:var(--text2);margin-top:auto;}
+.post-slot.no-post .srole{color:#c0bdb8;}
+
+/* ANALYTICS */
+.analytics{display:grid;grid-template-columns:380px 1fr;gap:28px;margin-top:28px;padding-top:24px;border-top:1px solid var(--border2);}
+.analytics-title{font-family:'Cormorant Garamond',serif;font-size:18px;margin-bottom:16px;color:var(--text);}
+.pie-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.pie-sub{font-size:11px;color:var(--text2);text-align:center;}
+.leg-grid{display:flex;flex-direction:column;gap:10px;justify-content:center;}
+.leg-row{display:flex;align-items:center;gap:10px;}
+.ldot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.lname{flex:1;font-size:12px;color:var(--text2);}
+.lbw{width:100px;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;}
+.lbf{height:100%;border-radius:2px;transition:width .5s;}
+.lpct{font-size:12px;font-weight:500;min-width:36px;text-align:right;}
+.lcnt{font-size:11px;color:var(--text2);min-width:22px;text-align:right;}
+
+/* LEGEND PILLS */
+.legend-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;}
+.leg-pill{display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border2);}
+.leg-pill-dot{width:8px;height:8px;border-radius:50%;}
+
+@media(max-width:800px){.analytics{grid-template-columns:1fr;}.stats-row{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Коновалов Сергей <span>Контент-план</span></div>
+  <div></div>
+  <div class="hright">
+    <div class="month-nav">
+      <button onclick="prevMonth()">‹</button>
+      <span id="mlbl">—</span>
+      <button onclick="nextMonth()">›</button>
+    </div>
+    <div class="badge">Клиент</div>
+  </div>
+</header>
+
+<div class="page">
+  <div class="page-title" id="ptitle">—</div>
+  <div class="page-sub" id="psub">—</div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val" id="sv-filled">—</div><div class="stat-lbl">Постов запланировано</div><div class="stat-bar"><div class="stat-bar-f" id="sv-prog" style="width:0%"></div></div></div>
+    <div class="stat-card"><div class="stat-val" id="sv-pct">—</div><div class="stat-lbl">Заполнено</div></div>
+    <div class="stat-card"><div class="stat-val" id="sv-empty">—</div><div class="stat-lbl">Слотов ещё без темы</div></div>
+    <div class="stat-card"><div class="stat-val" id="sv-roles">—</div><div class="stat-lbl">Амплуа используется</div></div>
+  </div>
+
+  <div class="legend-pills" id="legend-pills"></div>
+
+  <div class="cal-head"><span></span><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+  <div class="cal-grid" id="calgrid"></div>
+
+  <div class="analytics">
+    <div>
+      <div class="analytics-title">Распределение амплуа</div>
+      <div class="pie-wrap"><canvas id="piecanvas" width="340" height="340"></canvas><div class="pie-sub" id="piesub"></div></div>
+    </div>
+    <div>
+      <div class="analytics-title">Детали</div>
+      <div class="leg-grid" id="pielegend"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SK=id=>'prc_content_'+id,RK=id=>'prc_roles_'+id,CLIENTS_KEY='prc_clients';
+const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+let cY=new Date().getFullYear(),cM=new Date().getMonth();
+let clients=[],curClientId=null,roles=[],plan=[];
+
+function mk(){return cY+'_'+cM;}
+function dim(y,m){return new Date(y,m+1,0).getDate();}
+function fdow(y,m){return(new Date(y,m,1).getDay()+6)%7;}
+function byId(id){return roles.find(r=>r.id===id);}
+
+function loadClients(){
+  clients=JSON.parse(localStorage.getItem(CLIENTS_KEY)||'null');
+  if(!clients||!clients.length)clients=[{id:'thailand',name:'Таиланд · Недвижимость',color:'#c9a96e'},{id:'crypto',name:'Крипта',color:'#a897f0'}];
+}
+function loadRoles(){
+  const s=localStorage.getItem(RK(curClientId));
+  roles=s?JSON.parse(s):[{id:'expert',name:'Эксперт по недвижке',bg:'#ddeeff',tc:'#1a4a7a'},{id:'family',name:'Семьянин',bg:'#d6f0e6',tc:'#0d5530'},{id:'expat',name:'Тайский экспат',bg:'#fdf0d4',tc:'#5a3800'},{id:'biz',name:'Бизнесмен',bg:'#eae8fc',tc:'#2a1f6a'},{id:'comment',name:'Комментатор',bg:'#fde8e0',tc:'#6a2010'},{id:'analyst',name:'Аналитик',bg:'#e4f4d8',tc:'#1a4a08'}];
+}
+function loadData(){
+  const all=JSON.parse(localStorage.getItem(SK(curClientId))||'{}');
+  const k=mk();
+  if(!all[k]){const d=dim(cY,cM);return Array.from({length:d},(_,i)=>({day:i+1,posts:[{role:'',topic:'',format:'',note:''},{role:'',topic:'',format:'',note:''}]}));}
+  return all[k];
+}
+
+function setClient(id){curClientId=id;loadRoles();plan=loadData();renderAll();}
+function prevMonth(){cM--;if(cM<0){cM=11;cY--;}plan=loadData();renderAll();}
+function nextMonth(){cM++;if(cM>11){cM=0;cY++;}plan=loadData();renderAll();}
+
+function renderAll(){
+  const client=clients.find(c=>c.id===curClientId)||clients[0];
+  const lbl=MN[cM]+' '+cY;
+  document.getElementById('mlbl').textContent=lbl;
+  document.getElementById('ptitle').textContent='Контент-план';
+  document.getElementById('psub').textContent=lbl;
+  renderStats();
+  renderLegendPills();
+  renderCal();
+  renderPie();
+}
+
+function renderClientSel(){
+  const el=document.getElementById('client-sel');el.innerHTML='';
+  clients.forEach(c=>{
+    const t=document.createElement('div');
+    t.className='ctab'+(c.id===curClientId?' active':'');
+    if(c.id!==curClientId)t.innerHTML=`<div class="ctdot" style="background:${c.color}"></div>`;
+    t.innerHTML+=c.name;
+    t.onclick=()=>setClient(c.id);
+    el.appendChild(t);
+  });
+}
+
+function renderStats(){
+  const all=plan.flatMap(d=>d.posts);
+  const total=all.length,filled=all.filter(p=>p.role).length;
+  const pct=total?Math.round(filled/total*100):0;
+  const usedRoles=new Set(all.filter(p=>p.role).map(p=>p.role)).size;
+  document.getElementById('sv-filled').textContent=filled;
+  document.getElementById('sv-pct').textContent=pct+'%';
+  document.getElementById('sv-empty').textContent=total-filled;
+  document.getElementById('sv-roles').textContent=usedRoles;
+  document.getElementById('sv-prog').style.width=pct+'%';
+}
+
+function renderLegendPills(){
+  const el=document.getElementById('legend-pills');
+  el.innerHTML=roles.map(r=>`<div class="leg-pill"><div class="leg-pill-dot" style="background:${r.tc}"></div>${r.name}</div>`).join('');
+}
+
+function renderCal(){
+  const grid=document.getElementById('calgrid');grid.innerHTML='';
+  const days=dim(cY,cM),off=fdow(cY,cM),weeks=Math.ceil((days+off)/7);
+  let dn=1,pi=0;
+  for(let w=0;w<weeks;w++){
+    const row=document.createElement('div');row.className='cal-row';
+    const wn=document.createElement('div');wn.className='wnl';wn.textContent='Н'+(w+1);row.appendChild(wn);
+    for(let d=0;d<7;d++){
+      const abs=w*7+d;const dc=document.createElement('div');
+      if(abs<off||dn>days){dc.className='day-cell empty-day';row.appendChild(dc);continue;}
+      const data=plan[pi];pi++;
+      dc.className='day-cell';
+      dc.innerHTML=`<div class="dn-row"><span class="dn">${dn}</span></div><div class="day-slots"></div>`;
+      const se=dc.querySelector('.day-slots');
+      data.posts.forEach((post,si)=>{
+        const r=byId(post.role);
+        const slot=document.createElement('div');
+        slot.className='post-slot'+(r?' has-post':' no-post');
+        if(r)slot.style.background=r.bg;
+        slot.innerHTML=`<span class="snum">${si+1}</span><span class="srole" style="${r?'color:'+r.tc:''}">${r?r.name:'—'}</span>${post.topic?`<span class="stopic">${post.topic}</span>`:''}${post.format?`<span class="sfmt">${post.format}</span>`:''}`;
+        se.appendChild(slot);
+      });
+      dn++;row.appendChild(dc);
+    }
+    grid.appendChild(row);
+  }
+}
+
+function renderPie(){
+  const cv=document.getElementById('piecanvas'),ctx=cv.getContext('2d');
+  const W=340,cx=170,cy=170,R=140,ri=72;
+  ctx.clearRect(0,0,W,W);
+  const all=plan.flatMap(d=>d.posts),total=all.length;
+  const cnt={};roles.forEach(r=>cnt[r.id]=0);
+  all.forEach(p=>{if(p.role&&cnt[p.role]!==undefined)cnt[p.role]++;});
+  const filled=all.filter(p=>p.role).length,empty=total-filled;
+  const slices=roles.map(r=>({name:r.name,c:cnt[r.id]||0,tc:r.tc,bg:r.bg})).filter(s=>s.c>0);
+  const PIE_BG='#f0ede8';
+  if(!filled){
+    ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fillStyle='#e8e5e0';ctx.fill();
+    ctx.beginPath();ctx.arc(cx,cy,ri,0,Math.PI*2);ctx.fillStyle=PIE_BG;ctx.fill();
+    ctx.fillStyle='#aaa';ctx.font='12px DM Sans,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('нет данных',cx,cy);
+    document.getElementById('piesub').textContent='';document.getElementById('pielegend').innerHTML='';return;
+  }
+  let ang=-Math.PI/2;
+  if(empty>0){const sw=empty/total*Math.PI*2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,ang,ang+sw);ctx.closePath();ctx.fillStyle='#e0ddd8';ctx.fill();ctx.strokeStyle=PIE_BG;ctx.lineWidth=2;ctx.stroke();ang+=sw;}
+  slices.forEach(s=>{const sw=s.c/total*Math.PI*2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,ang,ang+sw);ctx.closePath();ctx.fillStyle=s.tc;ctx.fill();ctx.strokeStyle=PIE_BG;ctx.lineWidth=2;ctx.stroke();ang+=sw;});
+  ctx.beginPath();ctx.arc(cx,cy,ri,0,Math.PI*2);ctx.fillStyle=PIE_BG;ctx.fill();
+  ctx.fillStyle='#1a1916';ctx.font='500 28px DM Sans,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(Math.round(filled/total*100)+'%',cx,cy-8);
+  ctx.fillStyle='#7a7870';ctx.font='13px DM Sans,sans-serif';ctx.fillText('заполнено',cx,cy+14);
+  document.getElementById('piesub').textContent=filled+' постов из '+total;
+  document.getElementById('pielegend').innerHTML=
+    slices.map(s=>{const p=Math.round(s.c/total*100);return`<div class="leg-row"><div class="ldot" style="background:${s.tc}"></div><div class="lname">${s.name}</div><div class="lbw"><div class="lbf" style="width:${p}%;background:${s.tc}"></div></div><div class="lpct">${p}%</div><div class="lcnt">${s.c} п.</div></div>`;}).join('')+
+    (empty>0?`<div class="leg-row"><div class="ldot" style="background:#c0bdb8"></div><div class="lname" style="color:#aaa">Без темы</div><div class="lbw"><div class="lbf" style="width:${Math.round(empty/total*100)}%;background:#c0bdb8"></div></div><div class="lpct" style="color:#aaa">${Math.round(empty/total*100)}%</div><div class="lcnt" style="color:#aaa">${empty} п.</div></div>`:'');
+}
+
+setInterval(()=>{loadClients();loadRoles();const prev=JSON.stringify(plan);plan=loadData();if(JSON.stringify(plan)!==prev)renderAll();},8000);
+
+loadClients();curClientId='thailand';loadRoles();plan=loadData();renderAll();
+</script>
+</body>
+</html>

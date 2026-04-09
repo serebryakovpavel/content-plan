@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Контент-план · Контентщик</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f3ef;--bg2:#fff;--bg3:#eceae5;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);--text:#1a1916;--text2:#6b6860;--text3:#aaa89e;--accent:#2d5a3d;--a2:#3d7a55;--al:#e8f2ec;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Manrope',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+header{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 20px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.logo{font-size:14px;font-weight:600;color:var(--accent);}
+.logo span{color:var(--text3);font-weight:400;}
+.monnav{display:flex;align-items:center;gap:7px;font-size:12px;}
+.monnav button{background:none;border:1px solid var(--border2);color:var(--text2);width:24px;height:24px;border-radius:5px;cursor:pointer;font-size:14px;}
+.monnav button:hover{border-color:var(--accent);color:var(--accent);}
+.monnav strong{min-width:94px;text-align:center;display:block;font-weight:500;font-size:12px;}
+.hbadge{font-size:10px;background:var(--al);color:var(--accent);padding:3px 9px;border-radius:20px;font-weight:600;}
+
+/* GOAL PROGRESS BANNER */
+.goal-banner{background:var(--bg2);border-bottom:1px solid var(--border2);padding:10px 20px;display:flex;align-items:center;gap:16px;}
+.gb-label{font-size:11px;color:var(--text2);white-space:nowrap;}
+.gb-track{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;max-width:300px;}
+.gb-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#2d5a3d,#5ecfa4);transition:width .5s;}
+.gb-nums{font-size:12px;font-weight:600;color:var(--accent);white-space:nowrap;}
+.gb-pct{font-size:11px;color:var(--text3);}
+.gb-stats{display:flex;gap:12px;margin-left:auto;}
+.gb-stat{text-align:center;}
+.gb-stat-v{font-size:14px;font-weight:600;color:var(--text);}
+.gb-stat-l{font-size:9px;color:var(--text3);margin-top:1px;}
+
+/* CLIENT SELECTOR */
+.client-bar{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 20px;display:flex;gap:0;overflow-x:auto;}
+.ctab{padding:0 14px;height:38px;display:flex;align-items:center;font-size:11px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;gap:6px;}
+.ctab:hover{color:var(--text2);}
+.ctab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.ctab-dot{width:7px;height:7px;border-radius:50%;}
+
+.layout{display:grid;grid-template-columns:1fr 272px;min-height:calc(100vh - 130px);}
+.main{padding:16px 18px;}
+.cal-head{display:grid;grid-template-columns:24px repeat(7,1fr);gap:2px;margin-bottom:2px;}
+.cal-head span{font-size:9px;color:var(--text3);text-align:center;font-weight:500;letter-spacing:.05em;text-transform:uppercase;}
+.cal-grid{display:flex;flex-direction:column;gap:2px;}
+.cal-row{display:grid;grid-template-columns:24px repeat(7,1fr);gap:2px;}
+.wnl{font-size:8px;color:var(--text3);display:flex;align-items:flex-start;padding-top:5px;font-weight:500;}
+.day-cell{border-radius:7px;overflow:hidden;border:1px solid var(--border2);background:var(--bg2);min-height:86px;display:flex;flex-direction:column;}
+.day-cell.empty-day{background:transparent;border:none;min-height:0;}
+.dn-row{padding:3px 5px;border-bottom:1px solid var(--border);}
+.dn{font-size:8px;color:var(--text3);font-weight:600;}
+.day-slots{display:flex;flex-direction:column;flex:1;}
+.post-slot{flex:1;padding:3px 5px;cursor:pointer;transition:all .12s;display:flex;flex-direction:column;gap:1px;min-height:36px;position:relative;}
+.post-slot:first-child{border-bottom:1px solid var(--border);}
+.post-slot:hover{filter:brightness(.96);}
+.post-slot.active-slot{outline:2px solid var(--accent);outline-offset:-1px;}
+.snum{position:absolute;top:2px;right:3px;font-size:7px;color:rgba(0,0,0,0.18);font-weight:600;}
+.srole{font-size:8px;font-weight:600;}
+.stopic{font-size:8px;line-height:1.3;flex:1;color:var(--text);}
+.sfmt{font-size:7px;color:var(--text2);margin-top:auto;}
+.post-slot.no-post{background:var(--bg);}
+.post-slot.no-post:hover{background:var(--al);}
+.post-slot.no-post .srole{color:var(--text3);}
+.sdone{position:absolute;bottom:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--accent);}
+
+/* SIDEBAR */
+.sidebar{border-left:1px solid var(--border2);background:var(--bg2);padding:16px 14px;position:sticky;top:130px;height:calc(100vh - 130px);overflow-y:auto;display:flex;flex-direction:column;gap:0;}
+.ph{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:8px;}
+.ph .icon{font-size:26px;}
+.ph p{font-size:11px;color:var(--text3);text-align:center;line-height:1.5;}
+.editor{display:none;}
+.editor.open{display:flex;flex-direction:column;}
+.ed-head{margin-bottom:12px;}
+.ed-date{font-size:9px;color:var(--text3);font-weight:600;letter-spacing:.06em;text-transform:uppercase;}
+.ed-role{font-size:13px;font-weight:600;margin-top:3px;}
+.ed-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;margin-top:4px;}
+.ed-slot-tabs{display:flex;gap:4px;margin-bottom:12px;}
+.etab{flex:1;padding:5px;border-radius:6px;border:1.5px solid var(--border2);font-size:10px;text-align:center;cursor:pointer;font-family:'Manrope',sans-serif;color:var(--text2);background:transparent;font-weight:500;}
+.etab.on{border-color:var(--accent);color:var(--accent);background:var(--al);}
+.notebox{background:var(--al);border:1px solid #b8d8c4;border-radius:6px;padding:7px 9px;font-size:10px;color:var(--accent);line-height:1.5;margin-bottom:10px;}
+.notebox strong{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;}
+.elbl{font-size:9px;color:var(--text3);font-weight:500;letter-spacing:.05em;text-transform:uppercase;display:block;margin-top:10px;margin-bottom:3px;}
+.editor textarea,.editor input,.editor select{width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:6px;padding:6px 9px;font-size:11px;font-family:'Manrope',sans-serif;color:var(--text);}
+.editor textarea{height:80px;resize:vertical;line-height:1.5;}
+.editor textarea:focus,.editor input:focus,.editor select:focus{outline:none;border-color:var(--accent);background:#fff;}
+.savebtn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:9px;font-size:12px;font-weight:600;font-family:'Manrope',sans-serif;cursor:pointer;margin-top:12px;}
+.savebtn:hover{background:var(--a2);}
+.savedmsg{text-align:center;font-size:10px;color:var(--accent);margin-top:5px;opacity:0;transition:opacity .3s;}
+.savedmsg.show{opacity:1;}
+
+/* TASKS */
+.task-section{border-top:1px solid var(--border);padding-top:12px;margin-top:12px;}
+.task-section h4{font-size:9px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;font-weight:500;}
+.chk-item{display:flex;align-items:flex-start;gap:7px;padding:5px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+.chk-item:last-child{border-bottom:none;}
+.chkbox{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--border2);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;}
+.chkbox.chk{background:var(--accent);border-color:var(--accent);}
+.chkbox.chk::after{content:'✓';color:#fff;font-size:8px;font-weight:700;}
+.chktxt{font-size:10px;color:var(--text);line-height:1.4;}
+.chktxt.done{text-decoration:line-through;color:var(--text3);}
+
+@media(max-width:780px){.layout{grid-template-columns:1fr;}.sidebar{position:static;height:auto;border-left:none;border-top:1px solid var(--border2);}}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div class="logo">Phuket RE <span>· Контент</span></div>
+    <div class="monnav">
+      <button onclick="prevMonth()">‹</button>
+      <strong id="mlbl">—</strong>
+      <button onclick="nextMonth()">›</button>
+    </div>
+  </div>
+  <div class="hbadge">Контентщик</div>
+</header>
+
+<div class="goal-banner">
+  <div class="gb-label">Прогресс к цели:</div>
+  <div class="gb-track"><div class="gb-fill" id="gbfill" style="width:0%"></div></div>
+  <div class="gb-nums" id="gbnums">0 / 30</div>
+  <div class="gb-pct" id="gbpct">(0%)</div>
+  <div class="gb-stats">
+    <div class="gb-stat"><div class="gb-stat-v" id="gs-written">0</div><div class="gb-stat-l">Написано</div></div>
+    <div class="gb-stat"><div class="gb-stat-v" id="gs-done">0</div><div class="gb-stat-l">Готово ✓</div></div>
+    <div class="gb-stat"><div class="gb-stat-v" id="gs-review">0</div><div class="gb-stat-l">На проверке</div></div>
+  </div>
+</div>
+
+<div class="client-bar" id="client-bar"></div>
+
+<div class="layout">
+<div class="main">
+  <div class="cal-head"><span></span><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+  <div class="cal-grid" id="calgrid"></div>
+</div>
+<div class="sidebar" id="sidebar">
+  <div class="ph" id="ph"><div class="icon">✏️</div><p>Нажми на любой слот<br>чтобы заполнить пост</p></div>
+  <div class="editor" id="editor">
+    <div class="ed-head">
+      <div class="ed-date" id="eddate">—</div>
+      <div class="ed-role" id="edrole">—</div>
+      <div class="ed-badge" id="edbadge"></div>
+    </div>
+    <div class="ed-slot-tabs">
+      <button class="etab on" id="etab0" onclick="switchTab(0)">Пост 1 · утро</button>
+      <button class="etab" id="etab1" onclick="switchTab(1)">Пост 2 · вечер</button>
+    </div>
+    <div id="notewrap" style="display:none"><div class="notebox"><strong>От руководителя</strong><span id="notetext"></span></div></div>
+    <label class="elbl">Тема / заголовок</label>
+    <textarea id="etopic" placeholder="Напиши тему или заголовок..."></textarea>
+    <label class="elbl">Формат</label>
+    <input type="text" id="eformat" placeholder="пост / сторис / видео / карусель" />
+    <label class="elbl">Статус</label>
+    <select id="estatus">
+      <option value="">В работе</option>
+      <option value="done">Готово ✓</option>
+      <option value="review">На проверке</option>
+      <option value="idea">Идея</option>
+    </select>
+    <button class="savebtn" onclick="saveEdit()">Сохранить</button>
+    <div class="savedmsg" id="savedmsg">Сохранено ✓</div>
+    <div class="task-section">
+      <h4>Задачи от руководителя</h4>
+      <div id="tasklist"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const SK  = id=>'prc_content_'+id;
+const RK  = id=>'prc_roles_'+id;
+const TK  = id=>'prc_tasks_'+id;
+const GK  = id=>'prc_goal_'+id;
+const STSK= id=>'prc_cwstat_'+id;
+const CKK = 'prc_cw_checks';
+const CLIENTS_KEY='prc_clients';
+const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+let cY=new Date().getFullYear(),cM=new Date().getMonth();
+let clients=[],curClientId=null,roles=[],plan=[],checks={};
+let eDayIdx=null,eTab=0;
+
+function mk(){return cY+'_'+cM;}
+function dim(y,m){return new Date(y,m+1,0).getDate();}
+function fdow(y,m){return(new Date(y,m,1).getDay()+6)%7;}
+function byId(id){return roles.find(r=>r.id===id);}
+function stkey(di,si){return mk()+'_'+di+'_'+si;}
+
+function loadClients(){
+  clients=JSON.parse(localStorage.getItem(CLIENTS_KEY)||'null');
+  if(!clients||!clients.length)clients=[{id:'thailand',name:'Таиланд · Недвижимость',color:'#c9a96e'},{id:'crypto',name:'Крипта',color:'#a897f0'}];
+}
+function loadRoles(){
+  const s=localStorage.getItem(RK(curClientId));
+  roles=s?JSON.parse(s):[{id:'expert',name:'Эксперт по недвижке',bg:'#ddeeff',tc:'#1a4a7a'},{id:'family',name:'Семьянин',bg:'#d6f0e6',tc:'#0d5530'},{id:'expat',name:'Тайский экспат',bg:'#fdf0d4',tc:'#5a3800'},{id:'biz',name:'Бизнесмен',bg:'#eae8fc',tc:'#2a1f6a'},{id:'comment',name:'Комментатор',bg:'#fde8e0',tc:'#6a2010'},{id:'analyst',name:'Аналитик',bg:'#e4f4d8',tc:'#1a4a08'}];
+}
+function loadData(){
+  const all=JSON.parse(localStorage.getItem(SK(curClientId))||'{}');
+  const k=mk();
+  if(!all[k]){const d=dim(cY,cM);return Array.from({length:d},(_,i)=>({day:i+1,posts:[{role:'',topic:'',format:'',note:''},{role:'',topic:'',format:'',note:''}]}));}
+  return all[k];
+}
+function saveData(){const all=JSON.parse(localStorage.getItem(SK(curClientId))||'{}');all[mk()]=plan;localStorage.setItem(SK(curClientId),JSON.stringify(all));}
+function loadTasks(){return JSON.parse(localStorage.getItem(TK(curClientId))||'[]');}
+function loadGoal(){return parseInt(localStorage.getItem(GK(curClientId))||'30');}
+function loadChecks(){return JSON.parse(localStorage.getItem(CKK)||'{}');}
+function saveChecks(){localStorage.setItem(CKK,JSON.stringify(checks));}
+function loadStat(){return JSON.parse(localStorage.getItem(STSK(curClientId))||'{}');}
+function saveStat(s){localStorage.setItem(STSK(curClientId),JSON.stringify(s));}
+
+function setClient(id){
+  curClientId=id;loadRoles();plan=loadData();
+  renderClientBar();renderCal();updateGoalBar();renderTasks();
+  eDayIdx=null;document.getElementById('ph').style.display='flex';document.getElementById('editor').classList.remove('open');
+}
+
+function prevMonth(){cM--;if(cM<0){cM=11;cY--;}plan=loadData();renderCal();updateGoalBar();}
+function nextMonth(){cM++;if(cM>11){cM=0;cY++;}plan=loadData();renderCal();updateGoalBar();}
+
+function renderClientBar(){
+  const el=document.getElementById('client-bar');el.innerHTML='';
+  clients.forEach(c=>{
+    const t=document.createElement('div');
+    t.className='ctab'+(c.id===curClientId?' active':'');
+    t.innerHTML=`<div class="ctab-dot" style="background:${c.color}"></div>${c.name}`;
+    t.onclick=()=>setClient(c.id);
+    el.appendChild(t);
+  });
+  document.getElementById('mlbl').textContent=MN[cM]+' '+cY;
+}
+
+function updateGoalBar(){
+  const stat=loadStat(),goal=loadGoal();
+  const all=plan.flatMap(d=>d.posts);
+  const written=all.filter(p=>p.topic&&p.topic.trim()).length;
+  const done=Object.keys(stat).filter(k=>k.startsWith(mk()+'_')&&stat[k]==='done').length;
+  const review=Object.keys(stat).filter(k=>k.startsWith(mk()+'_')&&stat[k]==='review').length;
+  const pct=goal?Math.min(100,Math.round(written/goal*100)):0;
+  document.getElementById('gbfill').style.width=pct+'%';
+  document.getElementById('gbnums').textContent=written+' / '+goal;
+  document.getElementById('gbpct').textContent='('+pct+'%)';
+  document.getElementById('gs-written').textContent=written;
+  document.getElementById('gs-done').textContent=done;
+  document.getElementById('gs-review').textContent=review;
+}
+
+function renderCal(){
+  const grid=document.getElementById('calgrid');grid.innerHTML='';
+  const days=dim(cY,cM),off=fdow(cY,cM),weeks=Math.ceil((days+off)/7);
+  const stat=loadStat();
+  let dn=1,pi=0;
+  for(let w=0;w<weeks;w++){
+    const row=document.createElement('div');row.className='cal-row';
+    const wn=document.createElement('div');wn.className='wnl';wn.textContent='Н'+(w+1);row.appendChild(wn);
+    for(let d=0;d<7;d++){
+      const abs=w*7+d;const dc=document.createElement('div');
+      if(abs<off||dn>days){dc.className='day-cell empty-day';row.appendChild(dc);continue;}
+      const data=plan[pi];pi++;
+      dc.className='day-cell';
+      dc.innerHTML=`<div class="dn-row"><span class="dn">${dn}</span></div><div class="day-slots"></div>`;
+      const se=dc.querySelector('.day-slots');
+      data.posts.forEach((post,si)=>{
+        const r=byId(post.role);
+        const isDone=stat[stkey(pi-1,si)]==='done';
+        const slot=document.createElement('div');
+        slot.className='post-slot'+(r?' has-post':' no-post');
+        if(r)slot.style.background=r.bg;
+        if(eDayIdx===pi-1&&eTab===si)slot.classList.add('active-slot');
+        slot.innerHTML=`<span class="snum">${si+1}</span><span class="srole" style="${r?'color:'+r.tc:''}">${r?r.name:'— нет темы —'}</span>${post.topic?`<span class="stopic">${post.topic}</span>`:''}${post.format?`<span class="sfmt">${post.format}</span>`:''}${isDone?'<div class="sdone"></div>':''}`;
+        const di=pi-1;slot.onclick=()=>openEditor(di,si);
+        se.appendChild(slot);
+      });
+      dn++;row.appendChild(dc);
+    }
+    grid.appendChild(row);
+  }
+}
+
+function openEditor(di,si){
+  eDayIdx=di;eTab=si;
+  document.getElementById('ph').style.display='none';
+  document.getElementById('editor').classList.add('open');
+  document.getElementById('eddate').textContent=plan[di].day+' '+MN[cM];
+  switchTab(si);renderCal();
+}
+
+function switchTab(idx){
+  eTab=idx;
+  document.querySelectorAll('.etab').forEach((t,i)=>t.classList.toggle('on',i===idx));
+  if(eDayIdx===null)return;
+  const p=plan[eDayIdx].posts[idx];
+  const r=byId(p.role);
+  document.getElementById('edrole').textContent=r?r.name:'Амплуа не задано';
+  const badge=document.getElementById('edbadge');
+  if(r){badge.textContent=r.name;badge.style.background=r.bg||'#eee';badge.style.color=r.tc||'#333';}else{badge.textContent='';}
+  const nw=document.getElementById('notewrap');
+  if(p.note&&p.note.trim()){nw.style.display='block';document.getElementById('notetext').textContent=p.note;}else{nw.style.display='none';}
+  document.getElementById('etopic').value=p.topic||'';
+  document.getElementById('eformat').value=p.format||'';
+  const stat=loadStat();
+  document.getElementById('estatus').value=stat[stkey(eDayIdx,idx)]||'';
+}
+
+function saveEdit(){
+  if(eDayIdx===null)return;
+  plan[eDayIdx].posts[eTab].topic=document.getElementById('etopic').value;
+  plan[eDayIdx].posts[eTab].format=document.getElementById('eformat').value;
+  saveData();
+  const stat=loadStat();
+  stat[stkey(eDayIdx,eTab)]=document.getElementById('estatus').value;
+  saveStat(stat);
+  const msg=document.getElementById('savedmsg');msg.classList.add('show');setTimeout(()=>msg.classList.remove('show'),2000);
+  renderCal();updateGoalBar();
+}
+
+function renderTasks(){
+  const tasks=loadTasks();
+  const el=document.getElementById('tasklist');
+  if(!tasks.length){el.innerHTML='<div style="font-size:10px;color:var(--text3)">Руководитель ещё не добавил задачи</div>';return;}
+  el.innerHTML=tasks.map((t,i)=>{
+    const k=mk()+'_'+curClientId+'_task_'+i,ck=checks[k]||false;
+    return`<div class="chk-item" onclick="toggleChk('${k}')"><div class="chkbox${ck?' chk':''}"></div><div class="chktxt${ck?' done':''}">${t}</div></div>`;
+  }).join('');
+}
+function toggleChk(k){checks[k]=!checks[k];saveChecks();renderTasks();}
+
+// Auto-refresh
+setInterval(()=>{
+  loadClients();loadRoles();
+  const prev=JSON.stringify(plan);plan=loadData();
+  if(JSON.stringify(plan)!==prev){renderCal();}
+  updateGoalBar();renderTasks();renderClientBar();
+},8000);
+
+checks=loadChecks();loadClients();curClientId=clients[0].id;
+loadRoles();plan=loadData();renderClientBar();renderCal();updateGoalBar();renderTasks();
+</script>
+</body>
+</html>
