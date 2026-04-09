@@ -52,10 +52,12 @@ header{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 32
 .post-slot{flex:1;padding:4px 6px;display:flex;flex-direction:column;gap:2px;min-height:36px;position:relative;}
 .post-slot:first-child{border-bottom:1px solid var(--border);}
 .snum{position:absolute;top:3px;right:4px;font-size:8px;color:rgba(0,0,0,0.2);font-weight:500;}
-.srole{font-size:9px;font-weight:600;}
-.stopic{font-size:8px;line-height:1.3;flex:1;color:var(--text);}
-.sfmt{font-size:7px;color:var(--text2);margin-top:auto;}
+.srole{font-size:9px;font-weight:600;color:rgba(255,255,255,0.9);}
+.stopic{font-size:8px;line-height:1.3;flex:1;color:rgba(255,255,255,0.85);}
+.sfmt{font-size:7px;color:rgba(255,255,255,0.5);margin-top:auto;}
 .post-slot.no-post .srole{color:#c0bdb8;}
+.post-slot.no-post .stopic{color:#aaa;}
+.post-slot.no-post .sfmt{color:#c0bdb8;}
 
 /* ANALYTICS */
 .analytics{display:grid;grid-template-columns:380px 1fr;gap:28px;margin-top:28px;padding-top:24px;border-top:1px solid var(--border2);}
@@ -214,7 +216,7 @@ function renderCal(){
         const slot=document.createElement('div');
         slot.className='post-slot'+(r?' has-post':' no-post');
         if(r)slot.style.background=r.bg;
-        slot.innerHTML=`<span class="snum">${si+1}</span><span class="srole" style="${r?'color:'+r.tc:''}">${r?r.name:'—'}</span>${post.topic?`<span class="stopic">${post.topic}</span>`:''}${post.format?`<span class="sfmt">${post.format}</span>`:''}`;
+        slot.innerHTML=`<span class="snum">${si+1}</span><span class="srole">${r?r.name:'—'}</span>${post.topic?`<span class="stopic">${post.topic}</span>`:''}${post.format?`<span class="sfmt">${post.format}</span>`:''}`;
         se.appendChild(slot);
       });
       dn++;row.appendChild(dc);
