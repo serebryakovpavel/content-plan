@@ -55,12 +55,14 @@ header{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 20
 .post-slot:hover{filter:brightness(.96);}
 .post-slot.active-slot{outline:2px solid var(--accent);outline-offset:-1px;}
 .snum{position:absolute;top:2px;right:3px;font-size:7px;color:rgba(0,0,0,0.18);font-weight:600;}
-.srole{font-size:8px;font-weight:600;}
-.stopic{font-size:8px;line-height:1.3;flex:1;color:var(--text);}
-.sfmt{font-size:7px;color:var(--text2);margin-top:auto;}
+.srole{font-size:8px;font-weight:600;color:rgba(255,255,255,0.9);}
+.stopic{font-size:8px;line-height:1.3;flex:1;color:rgba(255,255,255,0.85);}
+.sfmt{font-size:7px;color:rgba(255,255,255,0.5);margin-top:auto;}
 .post-slot.no-post{background:var(--bg);}
 .post-slot.no-post:hover{background:var(--al);}
 .post-slot.no-post .srole{color:var(--text3);}
+.post-slot.no-post .stopic{color:var(--text2);}
+.post-slot.no-post .sfmt{color:var(--text3);}
 .sdone{position:absolute;bottom:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--accent);}
 
 /* SIDEBAR */
@@ -278,7 +280,7 @@ function renderCal(){
         slot.className='post-slot'+(r?' has-post':' no-post');
         if(r)slot.style.background=r.bg;
         if(eDayIdx===pi-1&&eTab===si)slot.classList.add('active-slot');
-        slot.innerHTML=`<span class="snum">${si+1}</span><span class="srole" style="${r?'color:'+r.tc:''}">${r?r.name:'— нет темы —'}</span>${post.topic?`<span class="stopic">${post.topic}</span>`:''}${post.format?`<span class="sfmt">${post.format}</span>`:''}${isDone?'<div class="sdone"></div>':''}`;
+        slot.innerHTML=`<span class="snum">${si+1}</span><span class="srole">${r?r.name:'— нет темы —'}</span>${post.topic?`<span class="stopic">${post.topic}</span>`:''}${post.format?`<span class="sfmt">${post.format}</span>`:''}${isDone?'<div class="sdone"></div>':''}`;
         const di=pi-1;slot.onclick=()=>openEditor(di,si);
         se.appendChild(slot);
       });
