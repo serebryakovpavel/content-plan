@@ -6,7 +6,7 @@
 <title>Контент-план · Клиент</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#faf8f5;--bg2:#fff;--bg3:#f0ede8;--border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.12);--text:#1a1916;--text2:#7a7870;--text3:#b0ae a8;--gold:#b8944a;--gold2:#d4aa62;}
+:root{--bg:#0f0f0e;--bg2:#1a1a18;--bg3:#222220;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#f0ede8;--text2:#8a8780;--text3:#5a5856;--gold:#c9a96e;--gold2:#e8c87a;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 
@@ -234,19 +234,19 @@ function renderPie(){
   all.forEach(p=>{if(p.role&&cnt[p.role]!==undefined)cnt[p.role]++;});
   const filled=all.filter(p=>p.role).length,empty=total-filled;
   const slices=roles.map(r=>({name:r.name,c:cnt[r.id]||0,tc:r.tc,bg:r.bg})).filter(s=>s.c>0);
-  const PIE_BG='#f0ede8';
+  const PIE_BG='#0f0f0e';
   if(!filled){
-    ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fillStyle='#e8e5e0';ctx.fill();
+    ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fillStyle='#222220';ctx.fill();
     ctx.beginPath();ctx.arc(cx,cy,ri,0,Math.PI*2);ctx.fillStyle=PIE_BG;ctx.fill();
-    ctx.fillStyle='#aaa';ctx.font='12px DM Sans,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('нет данных',cx,cy);
+    ctx.fillStyle='#5a5856';ctx.font='12px DM Sans,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('нет данных',cx,cy);
     document.getElementById('piesub').textContent='';document.getElementById('pielegend').innerHTML='';return;
   }
   let ang=-Math.PI/2;
-  if(empty>0){const sw=empty/total*Math.PI*2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,ang,ang+sw);ctx.closePath();ctx.fillStyle='#e0ddd8';ctx.fill();ctx.strokeStyle=PIE_BG;ctx.lineWidth=2;ctx.stroke();ang+=sw;}
+  if(empty>0){const sw=empty/total*Math.PI*2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,ang,ang+sw);ctx.closePath();ctx.fillStyle='#222220';ctx.fill();ctx.strokeStyle=PIE_BG;ctx.lineWidth=2;ctx.stroke();ang+=sw;}
   slices.forEach(s=>{const sw=s.c/total*Math.PI*2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,ang,ang+sw);ctx.closePath();ctx.fillStyle=s.tc;ctx.fill();ctx.strokeStyle=PIE_BG;ctx.lineWidth=2;ctx.stroke();ang+=sw;});
   ctx.beginPath();ctx.arc(cx,cy,ri,0,Math.PI*2);ctx.fillStyle=PIE_BG;ctx.fill();
-  ctx.fillStyle='#1a1916';ctx.font='500 28px DM Sans,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(Math.round(filled/total*100)+'%',cx,cy-8);
-  ctx.fillStyle='#7a7870';ctx.font='13px DM Sans,sans-serif';ctx.fillText('заполнено',cx,cy+14);
+  ctx.fillStyle='#f0ede8';ctx.font='500 28px DM Sans,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(Math.round(filled/total*100)+'%',cx,cy-8);
+  ctx.fillStyle='#5a5856';ctx.font='13px DM Sans,sans-serif';ctx.fillText('заполнено',cx,cy+14);
   document.getElementById('piesub').textContent=filled+' постов из '+total;
   document.getElementById('pielegend').innerHTML=
     slices.map(s=>{const p=Math.round(s.c/total*100);return`<div class="leg-row"><div class="ldot" style="background:${s.tc}"></div><div class="lname">${s.name}</div><div class="lbw"><div class="lbf" style="width:${p}%;background:${s.tc}"></div></div><div class="lpct">${p}%</div><div class="lcnt">${s.c} п.</div></div>`;}).join('')+
