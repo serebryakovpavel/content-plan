@@ -32,11 +32,7 @@ header{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 20
 .gb-stat-l{font-size:9px;color:var(--text3);margin-top:1px;}
 
 /* CLIENT SELECTOR */
-.client-bar{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 20px;display:flex;gap:0;overflow-x:auto;}
-.ctab{padding:0 14px;height:38px;display:flex;align-items:center;font-size:11px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;gap:6px;}
-.ctab:hover{color:var(--text2);}
-.ctab.active{color:var(--accent);border-bottom-color:var(--accent);}
-.ctab-dot{width:7px;height:7px;border-radius:50%;}
+
 
 .layout{display:grid;grid-template-columns:1fr 272px;min-height:calc(100vh - 130px);}
 .main{padding:16px 18px;}
@@ -63,7 +59,10 @@ header{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 20
 .post-slot.no-post .srole{color:var(--text3);}
 .post-slot.no-post .stopic{color:var(--text2);}
 .post-slot.no-post .sfmt{color:var(--text3);}
-.sdone{position:absolute;bottom:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--accent);}
+.status-dot{position:absolute;top:4px;right:4px;width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.status-dot.none{background:#3a3836;border:1.5px solid #5a5856;}
+.status-dot.work{background:#f0b84a;}
+.status-dot.done{background:#5ecfa4;}
 
 /* SIDEBAR */
 .sidebar{border-left:1px solid var(--border2);background:var(--bg2);padding:16px 14px;position:sticky;top:130px;height:calc(100vh - 130px);overflow-y:auto;display:flex;flex-direction:column;gap:0;}
@@ -125,12 +124,12 @@ header{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 20
   <div class="gb-pct" id="gbpct">(0%)</div>
   <div class="gb-stats">
     <div class="gb-stat"><div class="gb-stat-v" id="gs-written">0</div><div class="gb-stat-l">Написано</div></div>
-    <div class="gb-stat"><div class="gb-stat-v" id="gs-done">0</div><div class="gb-stat-l">Готово ✓</div></div>
-    <div class="gb-stat"><div class="gb-stat-v" id="gs-review">0</div><div class="gb-stat-l">На проверке</div></div>
+    <div class="gb-stat"><div class="gb-stat-v" id="gs-work">0</div><div class="gb-stat-l">🟡 В работе</div></div>
+    <div class="gb-stat"><div class="gb-stat-v" id="gs-done">0</div><div class="gb-stat-l">🟢 Готово</div></div>
   </div>
 </div>
 
-<div class="client-bar" id="client-bar"></div>
+
 
 <div class="layout">
 <div class="main">
@@ -150,16 +149,17 @@ header{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 20
       <button class="etab" id="etab1" onclick="switchTab(1)">Пост 2 · вечер</button>
     </div>
     <div id="notewrap" style="display:none"><div class="notebox"><strong>От руководителя</strong><span id="notetext"></span></div></div>
+    <label class="elbl">Амплуа</label>
+    <select id="erole"></select>
     <label class="elbl">Тема / заголовок</label>
     <textarea id="etopic" placeholder="Напиши тему или заголовок..."></textarea>
     <label class="elbl">Формат</label>
     <input type="text" id="eformat" placeholder="пост / сторис / видео / карусель" />
     <label class="elbl">Статус</label>
     <select id="estatus">
-      <option value="">В работе</option>
-      <option value="done">Готово ✓</option>
-      <option value="review">На проверке</option>
-      <option value="idea">Идея</option>
+      <option value="">🔴 Не готово</option>
+      <option value="work">🟡 В работе</option>
+      <option value="done">🟢 Готово</option>
     </select>
     <button class="savebtn" onclick="saveEdit()">Сохранить</button>
     <div class="savedmsg" id="savedmsg">Сохранено ✓</div>
@@ -224,7 +224,7 @@ function saveStat(s){sbSet(STSK(curClientId),s);}
 
 function setClient(id){
   curClientId=id;loadRoles();plan=loadData();
-  renderClientBar();renderCal();updateGoalBar();renderTasks();
+  renderCal();updateGoalBar();renderTasks();
   eDayIdx=null;document.getElementById('ph').style.display='flex';document.getElementById('editor').classList.remove('open');
 }
 
@@ -232,14 +232,6 @@ function prevMonth(){cM--;if(cM<0){cM=11;cY--;}plan=loadData();renderCal();updat
 function nextMonth(){cM++;if(cM>11){cM=0;cY++;}plan=loadData();renderCal();updateGoalBar();}
 
 function renderClientBar(){
-  const el=document.getElementById('client-bar');el.innerHTML='';
-  clients.forEach(c=>{
-    const t=document.createElement('div');
-    t.className='ctab'+(c.id===curClientId?' active':'');
-    t.innerHTML=`<div class="ctab-dot" style="background:${c.color}"></div>${c.name}`;
-    t.onclick=()=>setClient(c.id);
-    el.appendChild(t);
-  });
   document.getElementById('mlbl').textContent=MN[cM]+' '+cY;
 }
 
@@ -248,14 +240,14 @@ function updateGoalBar(){
   const all=plan.flatMap(d=>d.posts);
   const written=all.filter(p=>p.topic&&p.topic.trim()).length;
   const done=Object.keys(stat).filter(k=>k.startsWith(mk()+'_')&&stat[k]==='done').length;
-  const review=Object.keys(stat).filter(k=>k.startsWith(mk()+'_')&&stat[k]==='review').length;
+  const work=Object.keys(stat).filter(k=>k.startsWith(mk()+'_')&&stat[k]==='work').length;
   const pct=goal?Math.min(100,Math.round(written/goal*100)):0;
   document.getElementById('gbfill').style.width=pct+'%';
   document.getElementById('gbnums').textContent=written+' / '+goal;
   document.getElementById('gbpct').textContent='('+pct+'%)';
   document.getElementById('gs-written').textContent=written;
   document.getElementById('gs-done').textContent=done;
-  document.getElementById('gs-review').textContent=review;
+  document.getElementById('gs-work').textContent=work;
 }
 
 function renderCal(){
@@ -275,12 +267,13 @@ function renderCal(){
       const se=dc.querySelector('.day-slots');
       data.posts.forEach((post,si)=>{
         const r=byId(post.role);
-        const isDone=stat[stkey(pi-1,si)]==='done';
+        const slotStat=stat[stkey(pi-1,si)]||'';
+        const dotClass=slotStat==='done'?'done':slotStat==='work'?'work':'none';
         const slot=document.createElement('div');
         slot.className='post-slot'+(r?' has-post':' no-post');
         if(r)slot.style.background=r.bg;
         if(eDayIdx===pi-1&&eTab===si)slot.classList.add('active-slot');
-        slot.innerHTML=`<span class="snum">${si+1}</span><span class="srole">${r?r.name:'— нет темы —'}</span>${post.topic?`<span class="stopic">${post.topic}</span>`:''}${post.format?`<span class="sfmt">${post.format}</span>`:''}${isDone?'<div class="sdone"></div>':''}`;
+        slot.innerHTML=`<div class="status-dot ${dotClass}"></div><span class="srole">${r?r.name:'— нет темы —'}</span>${post.topic?`<span class="stopic">${post.topic}</span>`:''}${post.format?`<span class="sfmt">${post.format}</span>`:''}`;
         const di=pi-1;slot.onclick=()=>openEditor(di,si);
         se.appendChild(slot);
       });
@@ -306,9 +299,11 @@ function switchTab(idx){
   const r=byId(p.role);
   document.getElementById('edrole').textContent=r?r.name:'Амплуа не задано';
   const badge=document.getElementById('edbadge');
-  if(r){badge.textContent=r.name;badge.style.background=r.bg||'#eee';badge.style.color=r.tc||'#333';}else{badge.textContent='';}
+  if(r){badge.textContent=r.name;badge.style.background=r.bg||'#333';badge.style.color='rgba(255,255,255,0.9)';}else{badge.textContent='';}
   const nw=document.getElementById('notewrap');
   if(p.note&&p.note.trim()){nw.style.display='block';document.getElementById('notetext').textContent=p.note;}else{nw.style.display='none';}
+  // populate role select
+  document.getElementById('erole').innerHTML='<option value="">— нет амплуа —</option>'+roles.map(ro=>`<option value="${ro.id}"${p.role===ro.id?' selected':''}>${ro.name}</option>`).join('');
   document.getElementById('etopic').value=p.topic||'';
   document.getElementById('eformat').value=p.format||'';
   const stat=loadStat();
@@ -317,12 +312,19 @@ function switchTab(idx){
 
 function saveEdit(){
   if(eDayIdx===null)return;
+  const newRole=document.getElementById('erole').value;
+  plan[eDayIdx].posts[eTab].role=newRole;
   plan[eDayIdx].posts[eTab].topic=document.getElementById('etopic').value;
   plan[eDayIdx].posts[eTab].format=document.getElementById('eformat').value;
   saveData();
   const stat=loadStat();
   stat[stkey(eDayIdx,eTab)]=document.getElementById('estatus').value;
   saveStat(stat);
+  // update badge
+  const r=byId(newRole);
+  const badge=document.getElementById('edbadge');
+  document.getElementById('edrole').textContent=r?r.name:'Амплуа не задано';
+  if(r){badge.textContent=r.name;badge.style.background=r.bg||'#333';badge.style.color='rgba(255,255,255,0.9)';}else{badge.textContent='';}
   const msg=document.getElementById('savedmsg');msg.classList.add('show');setTimeout(()=>msg.classList.remove('show'),2000);
   renderCal();updateGoalBar();
 }
@@ -344,7 +346,7 @@ async function initApp(){
   const [clientsData]=await Promise.all([sbPull(CLIENTS_KEY)]);
   if(clientsData){clients=clientsData;localStorage.setItem(CLIENTS_KEY,JSON.stringify(clientsData));}
   else loadClients();
-  curClientId=clients[0].id;
+  curClientId='thailand';
 
   const [rolesData,planData2,tasksData,goalData,statData]=await Promise.all([
     sbPull(RK(curClientId)),sbPull(SK(curClientId)),
@@ -362,7 +364,7 @@ async function initApp(){
   localStorage.setItem(SK(curClientId),JSON.stringify(all));
   plan=all[k];
 
-  renderClientBar();renderCal();updateGoalBar();renderTasks();
+  renderCal();updateGoalBar();renderTasks();
 
   // refresh every 12s
   setInterval(async()=>{
