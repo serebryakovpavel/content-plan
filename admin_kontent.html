@@ -304,8 +304,7 @@ nav{display:flex;align-items:center;gap:0;padding:0;height:54px;border-bottom:1p
   <div class="modal">
     <h3 id="mtitle">День</h3>
     <div class="stabs">
-      <button class="stab on" id="stab0" onclick="switchTab(0)">Пост 1 · утро</button>
-      <button class="stab" id="stab1" onclick="switchTab(1)">Пост 2 · вечер</button>
+      <div class="stabs" id="modal-stabs"></div>
     </div>
     <label>Амплуа</label><select id="mrole"></select>
     <label>Тема поста</label><textarea id="mtopic" placeholder="Идея или тема..."></textarea>
@@ -458,11 +457,15 @@ function byId(id){return roles.find(r=>r.id===id);}
 function mk(){return cY+'_'+cM;}
 function dim(y,m){return new Date(y,m+1,0).getDate();}
 function fdow(y,m){return(new Date(y,m,1).getDay()+6)%7;}
+function postsCount(){return(cY>2026||(cY===2026&&cM>=4))?3:2;}
+function emptyPost(){return{role:'',topic:'',format:'',note:''};}
 function loadData(){
   const stored=localStorage.getItem(SK(curClientId));
   const all=stored?JSON.parse(stored):{};
   const k=mk();
-  if(!all[k]){const d=dim(cY,cM);all[k]=Array.from({length:d},(_,i)=>({day:i+1,posts:[{role:'',topic:'',format:'',note:''},{role:'',topic:'',format:'',note:''}]}));sbSet(SK(curClientId),all);}
+  const n=postsCount();
+  if(!all[k]){const d=dim(cY,cM);all[k]=Array.from({length:d},(_,i)=>({day:i+1,posts:Array.from({length:n},emptyPost)}));sbSet(SK(curClientId),all);}
+  all[k].forEach(day=>{while(day.posts.length<n)day.posts.push(emptyPost());});
   return all[k];
 }
 function saveData(){
@@ -591,9 +594,19 @@ function delRole(id){if(!confirm('Удалить амплуа?'))return;roles=ro
 document.getElementById('roleinp').addEventListener('keydown',e=>{if(e.key==='Enter')addRole();});
 
 // ── MODAL ──
-function openModal(di,si){eDay=di;eTab=si;document.getElementById('mtitle').textContent=plan[di].day+' '+MN[cM];switchTab(si);document.getElementById('overlay').classList.add('open');}
+const TAB_LABELS=['Пост 1 · утро','Пост 2 · день','Пост 3 · вечер'];
+function openModal(di,si){
+  eDay=di;eTab=si;
+  document.getElementById('mtitle').textContent=plan[di].day+' '+MN[cM];
+  const n=plan[di].posts.length;
+  document.getElementById('modal-stabs').innerHTML=Array.from({length:n},(_,i)=>
+    `<button class="stab${i===si?' on':''}" onclick="switchTab(${i})">${TAB_LABELS[i]||'Пост '+(i+1)}</button>`
+  ).join('');
+  switchTab(si);
+  document.getElementById('overlay').classList.add('open');
+}
 function switchTab(idx){
-  eTab=idx;document.querySelectorAll('.stab').forEach((t,i)=>t.classList.toggle('on',i===idx));
+  eTab=idx;document.querySelectorAll('#modal-stabs .stab').forEach((t,i)=>t.classList.toggle('on',i===idx));
   if(eDay===null)return;
   const p=plan[eDay].posts[idx];
   document.getElementById('mrole').innerHTML='<option value="">— нет поста —</option>'+roles.map(r=>`<option value="${r.id}"${p.role===r.id?' selected':''}>${r.name}</option>`).join('');
@@ -713,7 +726,9 @@ async function initApp(){
 
   const all = planAllData || {};
   const k=mk();
-  if(!all[k]){const d=dim(cY,cM);all[k]=Array.from({length:d},(_,i)=>({day:i+1,posts:[{role:'',topic:'',format:'',note:''},{role:'',topic:'',format:'',note:''}]}));}
+  const n=postsCount();
+  if(!all[k]){const d=dim(cY,cM);all[k]=Array.from({length:d},(_,i)=>({day:i+1,posts:Array.from({length:n},emptyPost)}));}
+  all[k].forEach(day=>{while(day.posts.length<n)day.posts.push(emptyPost());});
   localStorage.setItem(SK(curClientId), JSON.stringify(all));
   plan = all[k];
 

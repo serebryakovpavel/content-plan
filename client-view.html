@@ -49,7 +49,7 @@ header{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 32
 .dn-row{padding:4px 6px;border-bottom:1px solid var(--border);}
 .dn{font-size:9px;color:var(--text2);font-weight:500;}
 .day-slots{display:flex;flex-direction:column;flex:1;}
-.post-slot{flex:1;padding:4px 6px;display:flex;flex-direction:column;gap:2px;min-height:36px;position:relative;}
+.post-slot{flex:1;padding:4px 6px;display:flex;flex-direction:column;gap:2px;min-height:52px;position:relative;}
 .post-slot:first-child{border-bottom:1px solid var(--border);}
 .snum{position:absolute;top:3px;right:4px;font-size:8px;color:rgba(0,0,0,0.2);font-weight:500;}
 .srole{font-size:9px;font-weight:600;color:rgba(255,255,255,0.9);}
@@ -58,6 +58,16 @@ header{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 32
 .post-slot.no-post .srole{color:#c0bdb8;}
 .post-slot.no-post .stopic{color:#aaa;}
 .post-slot.no-post .sfmt{color:#c0bdb8;}
+.link-row{display:flex;align-items:center;gap:4px;margin-top:3px;}
+.link-inp{flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:4px;padding:2px 5px;font-size:8px;color:rgba(255,255,255,0.7);font-family:'DM Sans',sans-serif;min-width:0;}
+.link-inp::placeholder{color:rgba(255,255,255,0.3);}
+.link-inp:focus{outline:none;border-color:var(--gold);}
+.post-slot.no-post .link-inp{background:rgba(0,0,0,0.15);border-color:rgba(0,0,0,0.2);color:var(--text2);}
+.post-slot.no-post .link-inp::placeholder{color:var(--text3);}
+.post-link{font-size:8px;color:var(--gold);text-decoration:none;white-space:nowrap;}
+.post-link:hover{text-decoration:underline;}
+.link-clr{background:none;border:none;color:rgba(255,255,255,0.3);cursor:pointer;font-size:11px;padding:0;line-height:1;}
+.link-clr:hover{color:#e24b4a;}
 
 /* ANALYTICS */
 .analytics{display:grid;grid-template-columns:380px 1fr;gap:28px;margin-top:28px;padding-top:24px;border-top:1px solid var(--border2);}
@@ -126,10 +136,11 @@ header{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 32
 
 <script>
 const SK=id=>'prc_content_'+id,RK=id=>'prc_roles_'+id,CLIENTS_KEY='prc_clients';
+const LK=id=>'prc_client_links_'+id; // отдельное хранилище ссылок клиента
 const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 
 let cY=new Date().getFullYear(),cM=new Date().getMonth();
-let clients=[],curClientId=null,roles=[],plan=[];
+let clients=[],curClientId=null,roles=[],plan=[],clientLinks={};
 
 function mk(){return cY+'_'+cM;}
 function dim(y,m){return new Date(y,m+1,0).getDate();}
@@ -139,18 +150,25 @@ function byId(id){return roles.find(r=>r.id===id);}
 // ── SUPABASE ──
 const SB_URL='https://jwjgpkqdtyxhpxiucrug.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3amdwa3FkdHl4aHB4aXVjcnVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MTI0NjcsImV4cCI6MjA5MTI4ODQ2N30.PtaEXvaX8D7UyQqiJYGFSKCEefH8JR9TWe5Fm_rQwV0';
-const SB_HDR={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+const SB_HDR={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
 async function sbPull(key){try{const r=await fetch(`${SB_URL}/rest/v1/content_data?id=eq.${encodeURIComponent(key)}&select=data`,{headers:SB_HDR});const rows=await r.json();if(rows&&rows.length){localStorage.setItem(key,JSON.stringify(rows[0].data));return rows[0].data;}}catch(e){}const ls=localStorage.getItem(key);return ls?JSON.parse(ls):null;}
+async function sbSet(key,value){localStorage.setItem(key,JSON.stringify(value));fetch(`${SB_URL}/rest/v1/content_data`,{method:'POST',headers:{...SB_HDR,'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({id:key,data:value,updated_at:new Date().toISOString()})}).catch(()=>{});}
+
+function linkKey(day,slot){return mk()+'_'+day+'_'+slot;}
 
 function loadRoles(){
   const s=localStorage.getItem(RK(curClientId));
   roles=s?JSON.parse(s):[{id:'expert',name:'Эксперт по недвижке',bg:'#ddeeff',tc:'#1a4a7a'},{id:'family',name:'Семьянин',bg:'#d6f0e6',tc:'#0d5530'},{id:'expat',name:'Тайский экспат',bg:'#fdf0d4',tc:'#5a3800'},{id:'biz',name:'Бизнесмен',bg:'#eae8fc',tc:'#2a1f6a'},{id:'comment',name:'Комментатор',bg:'#fde8e0',tc:'#6a2010'},{id:'analyst',name:'Аналитик',bg:'#e4f4d8',tc:'#1a4a08'}];
 }
+function postsCount(){return(cY>2026||(cY===2026&&cM>=4))?3:2;}
 function loadData(){
   const all=JSON.parse(localStorage.getItem(SK(curClientId))||'{}');
   const k=mk();
-  if(!all[k]){const d=dim(cY,cM);return Array.from({length:d},(_,i)=>({day:i+1,posts:[{role:'',topic:'',format:'',note:''},{role:'',topic:'',format:'',note:''}]}));}
-  return all[k];
+  if(!all[k]){const d=dim(cY,cM);return Array.from({length:d},(_,i)=>({day:i+1,posts:Array.from({length:postsCount()},()=>({role:'',topic:'',format:'',note:''}))}));}
+  const data=all[k];
+  const n=postsCount();
+  data.forEach(day=>{while(day.posts.length<n)day.posts.push({role:'',topic:'',format:'',note:''});});
+  return data;
 }
 
 function prevMonth(){cM--;if(cM<0){cM=11;cY--;}plan=loadData();renderAll();}
@@ -213,16 +231,37 @@ function renderCal(){
       const se=dc.querySelector('.day-slots');
       data.posts.forEach((post,si)=>{
         const r=byId(post.role);
+        const lk=linkKey(data.day,si);
+        const savedLink=clientLinks[lk]||'';
         const slot=document.createElement('div');
         slot.className='post-slot'+(r?' has-post':' no-post');
         if(r)slot.style.background=r.bg;
-        slot.innerHTML=`<span class="snum">${si+1}</span><span class="srole">${r?r.name:'—'}</span>${post.topic?`<span class="stopic">${post.topic}</span>`:''}${post.format?`<span class="sfmt">${post.format}</span>`:''}`;
+        // never show content-writer's format/link — only topic and client's own link
+        const linkHtml=savedLink
+          ?`<div class="link-row"><a href="${savedLink}" target="_blank" class="post-link">Открыть →</a><button class="link-clr" onclick="clearLink('${lk}',event)">×</button></div>`
+          :`<div class="link-row"><input class="link-inp" placeholder="+ ссылка на пост" onblur="saveLink('${lk}',this.value,event)" onkeydown="if(event.key==='Enter'){saveLink('${lk}',this.value,event)}" /></div>`;
+        slot.innerHTML=`<span class="srole">${r?r.name:'—'}</span>${post.topic?`<span class="stopic">${post.topic}</span>`:''}${linkHtml}`;
         se.appendChild(slot);
       });
       dn++;row.appendChild(dc);
     }
     grid.appendChild(row);
   }
+}
+
+function saveLink(lk,val,e){
+  if(e)e.stopPropagation();
+  const v=val.trim();
+  if(!v)return;
+  clientLinks[lk]=v;
+  sbSet(LK(curClientId),clientLinks);
+  renderCal();
+}
+function clearLink(lk,e){
+  if(e)e.stopPropagation();
+  delete clientLinks[lk];
+  sbSet(LK(curClientId),clientLinks);
+  renderCal();
 }
 
 function renderPie(){
@@ -255,20 +294,27 @@ function renderPie(){
 
 async function initApp(){
   curClientId='thailand';
-  const [rolesData,planData]=await Promise.all([sbPull(RK(curClientId)),sbPull(SK(curClientId))]);
+  const [rolesData,planData,linksData]=await Promise.all([
+    sbPull(RK(curClientId)),sbPull(SK(curClientId)),sbPull(LK(curClientId))
+  ]);
   if(rolesData)localStorage.setItem(RK(curClientId),JSON.stringify(rolesData));
   loadRoles();
+  clientLinks=linksData||{};
   const all=planData||{};
   const k=mk();
-  if(!all[k]){const d=dim(cY,cM);all[k]=Array.from({length:d},(_,i)=>({day:i+1,posts:[{role:'',topic:'',format:'',note:''},{role:'',topic:'',format:'',note:''}]}));}
+  if(!all[k]){const d=dim(cY,cM);all[k]=Array.from({length:d},(_,i)=>({day:i+1,posts:Array.from({length:postsCount()},()=>({role:'',topic:'',format:'',note:''}))}))}
+  const n=postsCount();
+  all[k].forEach(day=>{while(day.posts.length<n)day.posts.push({role:'',topic:'',format:'',note:''});});
   localStorage.setItem(SK(curClientId),JSON.stringify(all));
   plan=all[k];
   renderAll();
 
   // auto-refresh every 15s
   setInterval(async()=>{
-    const fresh=await sbPull(SK(curClientId));
-    if(fresh){const a=fresh;const k2=mk();if(a[k2]){plan=a[k2];localStorage.setItem(SK(curClientId),JSON.stringify(a));renderAll();}}
+    const [fresh,freshLinks]=await Promise.all([sbPull(SK(curClientId)),sbPull(LK(curClientId))]);
+    if(freshLinks)clientLinks=freshLinks;
+    if(fresh){const a=fresh;const k2=mk();if(a[k2]){plan=a[k2];localStorage.setItem(SK(curClientId),JSON.stringify(a));}}
+    renderAll();
   },15000);
 }
 initApp();

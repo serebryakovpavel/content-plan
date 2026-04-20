@@ -60,7 +60,7 @@ header{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 20
 .post-slot.no-post .stopic{color:var(--text2);}
 .post-slot.no-post .sfmt{color:var(--text3);}
 .status-dot{position:absolute;top:4px;right:4px;width:9px;height:9px;border-radius:50%;flex-shrink:0;}
-.status-dot.none{background:#3a3836;border:1.5px solid #5a5856;}
+.status-dot.none{background:#e24b4a;}
 .status-dot.work{background:#f0b84a;}
 .status-dot.done{background:#5ecfa4;}
 
@@ -144,17 +144,17 @@ header{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 20
       <div class="ed-role" id="edrole">—</div>
       <div class="ed-badge" id="edbadge"></div>
     </div>
-    <div class="ed-slot-tabs">
-      <button class="etab on" id="etab0" onclick="switchTab(0)">Пост 1 · утро</button>
-      <button class="etab" id="etab1" onclick="switchTab(1)">Пост 2 · вечер</button>
-    </div>
+    <div class="ed-slot-tabs" id="ed-slot-tabs"></div>
     <div id="notewrap" style="display:none"><div class="notebox"><strong>От руководителя</strong><span id="notetext"></span></div></div>
     <label class="elbl">Амплуа</label>
     <select id="erole"></select>
     <label class="elbl">Тема / заголовок</label>
     <textarea id="etopic" placeholder="Напиши тему или заголовок..."></textarea>
-    <label class="elbl">Формат</label>
-    <input type="text" id="eformat" placeholder="пост / сторис / видео / карусель" />
+    <label class="elbl">Ссылка на пост</label>
+    <input type="url" id="eformat" placeholder="https://t.me/..." />
+    <div id="elink-wrap" style="display:none;margin-top:4px;">
+      <a id="elink-url" href="#" target="_blank" style="font-size:11px;color:var(--accent);word-break:break-all;">Открыть ссылку →</a>
+    </div>
     <label class="elbl">Статус</label>
     <select id="estatus">
       <option value="">🔴 Не готово</option>
@@ -208,11 +208,19 @@ function loadRoles(){
   const s=localStorage.getItem(RK(curClientId));
   roles=s?JSON.parse(s):[{id:'expert',name:'Эксперт по недвижке',bg:'#ddeeff',tc:'#1a4a7a'},{id:'family',name:'Семьянин',bg:'#d6f0e6',tc:'#0d5530'},{id:'expat',name:'Тайский экспат',bg:'#fdf0d4',tc:'#5a3800'},{id:'biz',name:'Бизнесмен',bg:'#eae8fc',tc:'#2a1f6a'},{id:'comment',name:'Комментатор',bg:'#fde8e0',tc:'#6a2010'},{id:'analyst',name:'Аналитик',bg:'#e4f4d8',tc:'#1a4a08'}];
 }
+function postsCount(){return(cY>2026||(cY===2026&&cM>=4))?3:2;}
+function emptyPost(){return{role:'',topic:'',format:'',note:''};}
+function emptyDay(i){const n=postsCount();return{day:i+1,posts:Array.from({length:n},emptyPost)};}
+
 function loadData(){
   const all=JSON.parse(localStorage.getItem(SK(curClientId))||'{}');
   const k=mk();
-  if(!all[k]){const d=dim(cY,cM);return Array.from({length:d},(_,i)=>({day:i+1,posts:[{role:'',topic:'',format:'',note:''},{role:'',topic:'',format:'',note:''}]}));}
-  return all[k];
+  if(!all[k]){const d=dim(cY,cM);return Array.from({length:d},(_,i)=>emptyDay(i));}
+  // if existing data has fewer posts than needed, pad with empty
+  const data=all[k];
+  const n=postsCount();
+  data.forEach(day=>{while(day.posts.length<n)day.posts.push(emptyPost());});
+  return data;
 }
 function saveData(){const stored=localStorage.getItem(SK(curClientId));const all=stored?JSON.parse(stored):{};all[mk()]=plan;sbSet(SK(curClientId),all);}
 function loadTasks(){const v=localStorage.getItem(TK(curClientId));return v?JSON.parse(v):[];}
@@ -273,7 +281,7 @@ function renderCal(){
         slot.className='post-slot'+(r?' has-post':' no-post');
         if(r)slot.style.background=r.bg;
         if(eDayIdx===pi-1&&eTab===si)slot.classList.add('active-slot');
-        slot.innerHTML=`<div class="status-dot ${dotClass}"></div><span class="srole">${r?r.name:'— нет темы —'}</span>${post.topic?`<span class="stopic">${post.topic}</span>`:''}${post.format?`<span class="sfmt">${post.format}</span>`:''}`;
+        slot.innerHTML=`<div class="status-dot ${dotClass}"></div><span class="srole">${r?r.name:'— нет темы —'}</span>${post.topic?`<span class="stopic">${post.topic}</span>`:''}`;
         const di=pi-1;slot.onclick=()=>openEditor(di,si);
         se.appendChild(slot);
       });
@@ -283,11 +291,18 @@ function renderCal(){
   }
 }
 
+const TAB_LABELS=['Пост 1 · утро','Пост 2 · день','Пост 3 · вечер'];
+
 function openEditor(di,si){
   eDayIdx=di;eTab=si;
   document.getElementById('ph').style.display='none';
   document.getElementById('editor').classList.add('open');
   document.getElementById('eddate').textContent=plan[di].day+' '+MN[cM];
+  // render tabs dynamically
+  const n=plan[di].posts.length;
+  document.getElementById('ed-slot-tabs').innerHTML=Array.from({length:n},(_,i)=>
+    `<button class="etab${i===si?' on':''}" onclick="switchTab(${i})">${TAB_LABELS[i]||'Пост '+(i+1)}</button>`
+  ).join('');
   switchTab(si);renderCal();
 }
 
@@ -302,13 +317,26 @@ function switchTab(idx){
   if(r){badge.textContent=r.name;badge.style.background=r.bg||'#333';badge.style.color='rgba(255,255,255,0.9)';}else{badge.textContent='';}
   const nw=document.getElementById('notewrap');
   if(p.note&&p.note.trim()){nw.style.display='block';document.getElementById('notetext').textContent=p.note;}else{nw.style.display='none';}
-  // populate role select
   document.getElementById('erole').innerHTML='<option value="">— нет амплуа —</option>'+roles.map(ro=>`<option value="${ro.id}"${p.role===ro.id?' selected':''}>${ro.name}</option>`).join('');
   document.getElementById('etopic').value=p.topic||'';
-  document.getElementById('eformat').value=p.format||'';
+  const linkVal=p.format||'';
+  document.getElementById('eformat').value=linkVal;
+  const lw=document.getElementById('elink-wrap');
+  const la=document.getElementById('elink-url');
+  if(linkVal.startsWith('http')){lw.style.display='block';la.href=linkVal;la.textContent=linkVal.length>40?linkVal.slice(0,40)+'...':linkVal;}
+  else{lw.style.display='none';}
   const stat=loadStat();
   document.getElementById('estatus').value=stat[stkey(eDayIdx,idx)]||'';
 }
+
+// show link preview as user types
+document.getElementById('eformat').addEventListener('input',function(){
+  const v=this.value.trim();
+  const lw=document.getElementById('elink-wrap');
+  const la=document.getElementById('elink-url');
+  if(v.startsWith('http')){lw.style.display='block';la.href=v;la.textContent=v.length>40?v.slice(0,40)+'...':v;}
+  else{lw.style.display='none';}
+});
 
 function saveEdit(){
   if(eDayIdx===null)return;
@@ -320,7 +348,6 @@ function saveEdit(){
   const stat=loadStat();
   stat[stkey(eDayIdx,eTab)]=document.getElementById('estatus').value;
   saveStat(stat);
-  // update badge
   const r=byId(newRole);
   const badge=document.getElementById('edbadge');
   document.getElementById('edrole').textContent=r?r.name:'Амплуа не задано';
@@ -360,7 +387,10 @@ async function initApp(){
   loadRoles();
   const all=planData2||{};
   const k=mk();
-  if(!all[k]){const d=dim(cY,cM);all[k]=Array.from({length:d},(_,i)=>({day:i+1,posts:[{role:'',topic:'',format:'',note:''},{role:'',topic:'',format:'',note:''}]}));}
+  if(!all[k]){const d=dim(cY,cM);all[k]=Array.from({length:d},(_,i)=>emptyDay(i));}
+  // pad existing days if needed
+  const n=postsCount();
+  all[k].forEach(day=>{while(day.posts.length<n)day.posts.push(emptyPost());});
   localStorage.setItem(SK(curClientId),JSON.stringify(all));
   plan=all[k];
 
